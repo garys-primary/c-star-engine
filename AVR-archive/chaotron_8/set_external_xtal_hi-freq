@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cd /Users/mac/Documents/AVR/chaotron_8/firmware 
+
+#avrdude -c USBasp -p atmega8 -U lfuse:w:0xff:m -U hfuse:w:0xC9:m
+avrdude -c USBasp -p atmega8 -U lfuse:w:0xef:m -U hfuse:w:0xd9:m
+#avrdude -c USBasp -p atmega8 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m
+
+sleep 15

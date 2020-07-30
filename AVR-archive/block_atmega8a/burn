@@ -1,0 +1,5 @@
+#!/bin/bash
+
+avrdude -c USBasp -p atmega8 -U flash:w:/Users/mac/Documents/AVR/block_atmega8a/firmware/main.hex:i
+
+sleep 15

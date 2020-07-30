@@ -1,0 +1,5 @@
+#!/bin/bash
+
+avrdude -c USBasp -p atmega8 -U flash:r:/Users/mac/Documents/AVR/chaotron_8/firmware/firmwaredump.hex:i
+
+sleep 15

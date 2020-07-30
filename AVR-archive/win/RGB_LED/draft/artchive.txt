@@ -1,0 +1,59 @@
+
+sbi 	PORTB, 	4	;Ser BIt 2 in PORTB for input
+sbi	DDRB,  	0 	;Red - output
+sbi	DDRB,  	3 	;Green
+sbi	DDRB,  	5 	;Blue
+
+ldi	r17,	255  ;limit
+
+
+;color1: ;On-times
+ldi	r20,	0	;Red
+ldi	r21,	0	;Green
+ldi	r22,	0	;Blue
+
+ldi	r16,	0	;Counter
+
+pwm:
+
+
+cp	r16,	r20
+breq	offRed
+
+ldi	r16,	RAMEND
+out	SPL,	r16 
+
+cp	r16,	r21	
+breq	offGreen
+
+cp	r16,	r22	
+breq	offBlue
+
+sbis	PINB,	4
+inc	r20
+
+cp	r16,	r17
+breq	initCycle	;if 255, reinit
+
+inc	r16
+rjmp pwm
+
+initCycle:
+cbi	PORTB,	0	;Red
+cbi	PORTB,	3 	;Green
+cbi	PORTB,	5 	;Blue
+
+ldi	r16,	0	;Counter
+reti
+
+offRed:
+sbi	PORTB,	0 
+reti
+
+offGreen:
+sbi	PORTB,	1 
+reti
+
+offBlue:
+sbi	PORTB,	2 
+reti

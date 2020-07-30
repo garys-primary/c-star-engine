@@ -1,0 +1,5 @@
+#!/bin/bash
+
+wine /Users/mac/Documents/AVR/avrasm2.exe -fI /Users/mac/Documents/AVR/block_att84A_bt/firmware/main.asm
+
+sleep 15

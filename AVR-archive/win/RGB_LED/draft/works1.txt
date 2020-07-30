@@ -1,0 +1,86 @@
+.include "C:\asm\Appnotes\tn13def.inc"
+;ldi	r16,	RAMEND
+;out	SPL,	r16 
+
+;			cycles	comment
+sbi 	PORTB, 	4		;Set BIt 2 in PORTB for input
+sbi	DDRB,  	0 		;Red - output
+sbi	DDRB,  	3 		;Green
+sbi	DDRB,  	1 		;Blue
+
+sbi	PORTB,	0		;turn off Red
+sbi	PORTB,	3		;turn off Green
+sbi	PORTB,	1		;turn off Blue
+
+ldi	r30,	0		;start counter
+ldi	r31,	0		;counter limit
+
+ldi	r20,	255		;Red time
+ldi	r21,	255		;Green time
+ldi	r22,	255		;Blue time
+
+
+main:
+cbi	PORTB,	0		;turn on Red
+
+ldi r16, 255
+ldi r17, 255
+delay0:
+subi r16, 1
+sbci r17, 0
+brcc delay0
+
+cp	r30,	r31
+breq 	offRed
+retRed:
+
+cbi	PORTB,	3		;turn on Green
+
+ldi r16, 255
+ldi r17, 255
+delay1:
+subi r16, 1
+sbci r17, 0
+brcc delay1
+
+cp	r30,	r31
+breq	offGreen
+retGreen:
+
+cbi	PORTB,	1		;turn on Blue
+
+ldi r16, 255
+ldi r17, 255
+delay2:
+subi r16, 1
+sbci r17, 0
+brcc delay2
+
+cp	r30,	r31
+breq	offBlue
+retBlue:
+
+
+inc	r30
+rjmp main
+
+init:
+cbi	PORTB,	0	;2	turn on Red
+cbi	PORTB,	3	;2	turn on Green
+cbi	PORTB,	5	;2	turn on Blue
+
+ldi	r30,	0	;1	reinit counter
+rjmp	retInit
+
+offRed:
+sbi	PORTB,	0	;2	turn off Red
+rjmp	retRed
+
+offGreen:
+sbi	PORTB,	3	;2	turn off Green
+rjmp	retGreen
+
+offBlue:
+sbi	PORTB,	1	;2	turn off Blue
+rjmp	retBlue
+

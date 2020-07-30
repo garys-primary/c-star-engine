@@ -1,0 +1,5 @@
+#!/bin/bash
+
+avrdude -p attiny441 -B 12 -c usbasp -e -u -U flash:w:/Users/mac/Documents/AVR/wall_attiny441/firmware/test.hex
+
+sleep 15

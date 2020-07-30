@@ -1,0 +1,219 @@
+;r16 - service -> status flags
+;r17 - service - delay  
+;r18, r19 - temps: delay0
+;r20, r21, r22 - current RGB
+;r23 - counter PWM
+;r24
+;r25, r26 (XL), r27 (XH) - transition destinations
+;r28 (YL), r29 (YH)	- internal delay counter
+;r28 (ZL), r29 (ZH) - color map pointer
+
+;cbr r18, 1 ; Clear bit 0 in r18
+;sbr r16, 1 ; Set bits 0 in r16
+;sbrs r0, 0 ; Skip if bit 0 in r0 set
+;sbrc r0, 0 ; Skip if bit 0 in r0 cleared
+
+.include "C:\asm\Appnotes\tn13def.inc"
+;.org	0
+;rjmp	reset
+.org	4
+;.db	255,127,80,	124,252,0,	127,255,212,	255,192,203	
+.db	255,0,0,	0,255,0,	0,0,255,	255,0,0,	0,255,0,	0,0,255,	255,0,0,	0,255,0,	0,0,255,	255,0,0,	0,255,0,	0,0,255,	255,0,0,	0,255,0,	0,0,255,	255,0,0,	0,255,0,	255,0,255
+;.db	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+
+reset:
+
+clr	r16
+;bit	purpose
+;1	OK (button released)
+;2
+;3
+;4
+;5
+;6
+;7
+;8
+
+;			cycles	comment
+sbi	PORTB, 	4		;Set BIt 2 in PORTB for input
+sbi	DDRB,  	0 		;Red - output
+sbi	DDRB,  	1 		;Green
+sbi	DDRB,  	2 		;Blue
+
+sbi	PORTB,	0		;turn off Red
+sbi	PORTB,	1		;turn off Green
+sbi	PORTB,	2		;turn off Blue
+
+ldi	r23,	0		;start main PWM counter
+
+rcall	initIntDelay
+
+clearColors:
+clr	ZH
+ldi	ZL,	8		;set start address of first color
+ldi	r25,	0		;init color selector
+rjmp	initColor
+
+;color1:
+;ldi	r20,	255		;Red time
+;ldi	r21,	127		;Green time
+;ldi	r22,	80		;Blue time
+;rjmp main
+
+;color2:
+;ldi	r20,	124		;Red time
+;ldi	r21,	252		;Green time
+;ldi	r22,	0		;Blue time
+;rjmp main
+
+;color3:
+;ldi	r20,	127		;Red time
+;ldi	r21,	255		;Green time
+;ldi	r22,	212		;Blue time
+;rjmp main
+
+;color4:
+;ldi	r20,	255		;Red time
+;ldi	r21,	192		;Green time
+;ldi	r22,	203		;Blue time
+;rjmp main
+
+;============MAIN================
+main:		; 1 pwm cycle = 12 cpu cycles minimum
+inc 	r23		;1
+
+cpi	r23,	255	;1
+breq	init		;1 .. 2
+retInit:
+
+cp	r23,	r20	;1
+breq 	offRed		;1 .. 2
+retRed:
+
+cp	r23,	r21	;1
+breq	offGreen		;1 .. 2
+retGreen:
+
+cp	r23,	r22	;1
+breq	offBlue		;1 .. 2
+retBlue:
+
+;==btn
+sbic	PINB,	4	;1 .. 3	if button ever released
+rcall	setFlag
+
+sbrs	r16,	0	;skip if OK flag set
+rjmp 	main		;else goto main
+
+sbis	PINB,	4
+rcall	nextColor
+
+rjmp	main
+;================================
+
+;=====Set flag=====
+setFlag:
+dec	r28
+cpi	r28,	0
+breq	decFlagMS
+
+decFlagMSret:
+processEnd:
+ret
+
+decFlagMS:
+dec	r29
+cpi	r29,	0
+sbic	PINB,	4
+breq	processFlag
+rjmp	decFlagMSret
+
+processFlag:
+ldi 	r16,	(1<<0)	;set flag in bit 0
+rcall	initIntDelay
+rjmp	processEnd
+;=====end set flag=====
+
+
+;sbis	PINB,	4	;if pressed
+;sbic	PINB,	4	;if released
+
+;cbr r16, 1 ; Clear bit 0 in r16
+;sbr r16, 1 ; Set bit 0 in r16
+;sbrs r16, 0 ; Skip if bit 0 in r16 set
+;sbrc r16, 0 ; Skip if bit 0 in r16 cleared
+
+
+nextColor:
+cpi	r25,	16	;total colors    <======
+breq	clearColors
+
+initColor:
+inc	r25
+clr	r20	;R
+clr	r21	;G
+clr	r22	;B
+clr	r23	;counter
+
+;		   init	clck1	clck2	clck3	clk4	clk5
+lpm	r20,	Z+;0 	3 	6	9	12	15
+lpm	r21,	Z+;1 	4 	7	10	13	?
+lpm	r22,	Z+;2 	5 	8	11	14	?
+
+ldi	r16,	(0<<0)	;clear OK flag
+rjmp main
+
+blink:
+sbi	PORTB,	0	;2	turn off Red
+sbi	PORTB,	1	;2	turn off Green
+sbi	PORTB,	2	;2	turn off Blue
+rcall 	delay1
+cbi	PORTB,	0	;2	turn on Red
+rcall 	delay1
+rjmp blink
+
+
+;==========COLOR WHEEL=============
+init:
+cbi	PORTB,	0	;2	turn on Red
+cbi	PORTB,	1	;2	turn on Green
+cbi	PORTB,	2	;2	turn on Blue
+
+ldi	r23,	0	;1	reinit counter
+rjmp	retInit
+
+offRed:
+sbi	PORTB,	0	;2	turn off Red
+rjmp	retRed
+
+offGreen:
+sbi	PORTB,	1	;2	turn off Green
+rjmp	retGreen
+
+offBlue:
+sbi	PORTB,	2	;2	turn off Blue
+rjmp	retBlue
+;=================================
+
+initIntDelay:
+ldi	r28,	255		;init internal delay
+ldi	r29,	15		;init internal delay
+ret
+
+delay0:
+ldi	r18,	10
+ldi	r19,	10
+del0:
+subi	r18,	1
+sbci	r19,	0
+brcc	del0
+ret
+
+delay1:
+ldi	r18,	255
+ldi	r19,	255
+del1:
+subi	r18,	1
+sbci	r19,	0
+brcc	del1
+ret

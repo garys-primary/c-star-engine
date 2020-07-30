@@ -1,0 +1,5 @@
+#!/bin/bash
+
+avrdude -p t84 -B 12 -c usbasp -e -u -U flash:w:/Users/mac/Documents/AVR/block_att84A_bt/firmware/main.hex
+
+sleep 15

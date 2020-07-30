@@ -1,0 +1,6 @@
+cd Documents/AVR/cpp_test
+rm a.out
+g++ test1.cpp
+chmod a+x a.out
+./a.out
+sleep 20

@@ -1,0 +1,1 @@
+avr-objdump -h -S firmware/main.elf > "firmware/dump/main.lss"

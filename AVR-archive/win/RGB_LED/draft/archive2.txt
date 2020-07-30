@@ -1,0 +1,54 @@
+
+;  -= PWM =-
+pwm:
+cp	r30,	r31	;1	if counter reached limit
+breq	init		;1 or 13	jump to initialization
+
+ldi r16, 10
+ldi r17, 2
+delay:
+subi r16, 1
+sbci r17, 0
+brcc delay
+
+cp	r30,	r20	;1	if counter==red time
+breq	offRed		;1 or 8	turn Red off
+
+cp	r30,	r21	;1	if counter==red time
+breq	offGreen		;1 or 8	turn Green off
+
+cp	r30,	r22	;1	if counter==red time
+breq	offBlue		;1 or 8	turn Blue off
+
+inc	r30		;1	pwm counter
+rjmp pwm			;2
+; -= PWM =-
+
+;cycle
+;
+;trivial pwm:	11
+;re-initializing:	23
+;off 1 color:	18
+;off 2 colors:	25
+;off 3 colors:	30
+
+
+init:
+cbi	PORTB,	0	;2	turn on Red
+cbi	PORTB,	3	;2	turn on Green
+cbi	PORTB,	5	;2	turn on Blue
+
+ldi	r30,	0	;1	reinit counter
+ret			;4
+
+offRed:
+sbi	PORTB,	0	;2	turn off Red
+ret			;4
+
+offGreen:
+sbi	PORTB,	3	;2	turn off Green
+ret			;4
+
+offBlue:
+sbi	PORTB,	5	;2	turn off Blue
+ret			;4

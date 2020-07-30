@@ -1,0 +1,5 @@
+#!/bin/bash
+
+avrdude -c USBasp -p attiny441 -U lfuse:w:0xe2:m -U flash:w:/Users/mac/Documents/AVR/chaotron_441/firmware/main.hex:i
+
+sleep 15
