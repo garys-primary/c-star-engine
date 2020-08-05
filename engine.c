@@ -1,6 +1,6 @@
 #include <iostream>
 //#include <sys/time.h> //mac
-//#include "lib/nanotime.c"
+#include "lib/nanotime.c"
 
 int generateNext();
 
@@ -16,7 +16,7 @@ int main(){
 
 
 	while(run){
-		//nano_second(&timestamp_ns);
+		nano_second(&timestamp_ns);
 
 		counter++;
 
@@ -36,34 +36,38 @@ int main(){
 		//test/dev
 		//printf("%ld", timestamp);
 
+		generateNext();
+		generateNext();
+		generateNext();
+		generateNext();
+		generateNext();
 		
+		//http://www.catb.org/esr/time-programming/
+		
+		
+		nano_second(&time_check_ns);
+		
+		//(1/44100)*1000000000
+		//T 44100 = 22675.736961451246 ns
 
-		int toWait = 1;
-		while(toWait){
-			//http://www.catb.org/esr/time-programming/
+		printf("%f\t", (float)timestamp_ns);
+		printf("%f\t", (float)T_ns);
+		printf("%f\n", (float)time_check_ns);
+
+		if(counter >=10)
+			run = 0;
 			
-			
-			//nano_second(&time_check_ns);
-			
-			//(1/44100)*1000000000
-			//T 44100 = 22675.736961451246 ns
+		// if(true || time_check_ns >= timestamp_ns + T_ns){
+		// 	toWait=0;
 
-			printf("%f\t", (float)timestamp_ns);
-			printf("%f\t", (float)T_ns);
-			printf("%f\n", (float)time_check_ns);
-				
-			if(time_check_ns >= timestamp_ns + T_ns){
-				toWait=0;
-
-				//printf("%0.20Ld", (float)((1.0/fd)*1000000000.0));
-				//, "T", (long int)(1/44100)/1000000
-				run = 0;
-			}
-
-		}			
+		// 	//printf("%0.20Ld", (float)((1.0/fd)*1000000000.0));
+		// 	//, "T", (long int)(1/44100)/1000000
+		// 	run = 0;
+		// }	
 	}
 }
 
 int generateNext(){
+	
 	return 0;
 };
