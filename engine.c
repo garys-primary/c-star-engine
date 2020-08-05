@@ -1,6 +1,6 @@
-#include <stdio.h>
+#include <iostream>
 //#include <sys/time.h> //mac
-#include "lib/nanotime.c"
+//#include "lib/nanotime.c"
 
 int generateNext();
 
@@ -16,7 +16,7 @@ int main(){
 
 
 	while(run){
-		nano_second(&timestamp_ns);
+		//nano_second(&timestamp_ns);
 
 		counter++;
 
@@ -43,7 +43,8 @@ int main(){
 			//http://www.catb.org/esr/time-programming/
 			
 			
-			nano_second(&time_check_ns);
+			//nano_second(&time_check_ns);
+			
 			//(1/44100)*1000000000
 			//T 44100 = 22675.736961451246 ns
 
