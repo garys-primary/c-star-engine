@@ -5498,7 +5498,7 @@ Exit:
 #include <process.h>
 #include <mmsystem.h>
 #include <mmreg.h>
-#include <dsound.h>
+#include "dsound.h"
 #include <assert.h>
 #include <algorithm>
 

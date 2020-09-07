@@ -6,7 +6,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "g++ -g engine.c; ./a.exe",
+            "command": "g++ -g engine.c -D__WINDOWS_DS__ -DUNICODE -DWIN32 lib/rtaudio/RtAudio.cpp -lOle32 -lWinmm -ldsound -o engine; ./engine.exe",
             "group":{
                 "kind": "build",
                 "isDefault": true
