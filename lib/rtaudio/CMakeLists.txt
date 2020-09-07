@@ -192,7 +192,7 @@ endif()
 
 # Windows libs
 if (NEED_WIN32LIBS)
-  list(APPEND LINKLIBS winmm ole32)
+  list(APPEND LINKLIBS Winmm Ole32)
 endif()
 
 # pthread
