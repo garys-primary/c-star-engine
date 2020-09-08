@@ -49,12 +49,6 @@ int main(){
 
 	int temp = 0;
 
-
-	//actual synth variables
-	int counter = 0;
-
-	int level = 0;
-
 	//init generators
 	time_t t;
 	srand((unsigned) time(&t));
@@ -112,24 +106,38 @@ int main(){
 
 		cout << "\nPlaying ... press <enter> to quit.\n";
 
-		char c = getchar();
 
+		// Keypress detection for live twiggle
 
-		if(c == 13){
-			if(OUTPUT_TO_SPEAKER){
-				aud1.stopStream();
-				if(aud1.isStreamOpen()) aud1.closeStream();
+		int keepReading = 1;
+
+		while(keepReading){
+			char c = getchar();
+
+			if(c == 13 || c == '\n'){
+				if(OUTPUT_TO_SPEAKER){
+					aud1.stopStream();
+					if(aud1.isStreamOpen()) aud1.closeStream();
+				}
+
+				if(OUTPUT_TO_SPECTRUM_ANALYZER){
+					aud2.stopStream();
+					if(aud2.isStreamOpen()) aud2.closeStream();
+				}	
+
+				keepReading = 0;	
+			}else{
+				cout << c << '\n';
 			}
-
-			if(OUTPUT_TO_SPECTRUM_ANALYZER){
-				aud2.stopStream();
-				if(aud2.isStreamOpen()) aud2.closeStream();
-			}	
-
-			return 0;
 		}
 
+
 	}else{
+		//UNDEVELOPED. use int generator() for output
+
+		int counter=0;
+		int level=0;
+
 		while(runFramer){
 			clock_gettime(CLOCK_MONOTONIC, &time1);
 			counter++;
@@ -199,7 +207,8 @@ float a2 = 0.8282;
 int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData ){
 	double *RTbuffer = (double *) outputBuffer;
 	double *lastValues = (double *) userData;
-	if ( status ) std::cout << "Stream underflow detected!" << std::endl;
+	
+	//if ( status ) std::cout << "Stream underflow detected!" << std::endl;
 
 
 	for (int i=0; i<nBufferFrames; i++ ) {
