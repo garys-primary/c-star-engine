@@ -27,9 +27,16 @@ int generateNoise();
 
 
 int NUM_FRAMES = 256;
-int IS_OUTPUT_SOUND = 1;
 int MIN_LEVEL = 0;
 int MAX_LEVEL = 1024;
+
+int IS_OUTPUT_SOUND = 1; //can be console log of vaweform
+int OUTPUT_TO_SPEAKER = 1;
+int OUTPUT_TO_SPECTRUM_ANALYZER = 1; //for this you need: 
+//a vitrual cable https://vb-audio.com/Cable/index.htm and a 
+//spectrum analyzer http://www.sillanumsoft.org/
+
+
 
 int main(){
 	//setup and stuff
@@ -56,28 +63,71 @@ int main(){
 
 	if(IS_OUTPUT_SOUND){
 		//init RtAudio
-		RtAudio dac;
-		if ( dac.getDeviceCount() < 1 ) {
+		RtAudio aud1;
+		RtAudio aud2;
+
+		//list devices
+		unsigned int devices = aud1.getDeviceCount();
+		if ( devices < 1 ) {
 			std::cout << "\nNo audio devices found!\n";
 			exit( 0 );
 		}
+		RtAudio::DeviceInfo info;
+		for ( unsigned int i=0; i<devices; i++ ) {
+			info = aud1.getDeviceInfo( i );
+			if ( info.probed == true ) {
+				// Print, for example, the maximum number of output channels for each device
+				std::cout << "device = " << i;
+				std::cout << ": maximum output channels = " << info.outputChannels << "\n";
+			}
+		}
 
-		RtAudio::StreamParameters parameters;
-		parameters.deviceId = dac.getDefaultOutputDevice();
-		parameters.nChannels = 1;
-		parameters.firstChannel = 0;
-		unsigned int sampleRate = (int)fd;
-		unsigned int bufferFrames = NUM_FRAMES; // 256 sample frames
-		double data[2];
+		if(OUTPUT_TO_SPEAKER){
+			RtAudio::StreamParameters parameters;
+			parameters.deviceId = aud1.getDefaultOutputDevice();
+			parameters.nChannels = 1;
+			parameters.firstChannel = 0;
+			unsigned int sampleRate = (int)fd;
+			unsigned int bufferFrames = NUM_FRAMES; // 256 sample frames
+			double data[2];
+
+			aud1.openStream( &parameters, NULL, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &generator, (void *)&data );
+			aud1.startStream();
+		}
+		if(OUTPUT_TO_SPECTRUM_ANALYZER){
+			
+			RtAudio::StreamParameters parameters2;
+			parameters2.deviceId = 2;
+			parameters2.nChannels = 1;
+			parameters2.firstChannel = 0;
+			unsigned int sampleRate = (int)fd;
+			unsigned int bufferFrames = NUM_FRAMES; // 256 sample frames
+			double data[2];
+
+			aud2.openStream( &parameters2, NULL, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &generator, (void *)&data );
+			aud2.startStream();
+		}
 		
-		dac.openStream( &parameters, NULL, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &generator, (void *)&data );
-		dac.startStream();
 
-		std::cout << "\nPlaying ... press <enter> to quit.\n";
-		std::cin.get();
 
-		dac.stopStream();
-		if(dac.isStreamOpen()) dac.closeStream();
+		cout << "\nPlaying ... press <enter> to quit.\n";
+
+		char c = getchar();
+
+
+		if(c == 13){
+			if(OUTPUT_TO_SPEAKER){
+				aud1.stopStream();
+				if(aud1.isStreamOpen()) aud1.closeStream();
+			}
+
+			if(OUTPUT_TO_SPECTRUM_ANALYZER){
+				aud2.stopStream();
+				if(aud2.isStreamOpen()) aud2.closeStream();
+			}	
+
+			return 0;
+		}
 
 	}else{
 		while(runFramer){
@@ -136,8 +186,8 @@ int level = 0;
 /////////////////////////////////////////////////////////////////////
 // SYNTH 1 variables
 // optimization: https://www.avrfreaks.net/forum/circular-buffer
-int BUFFER_SIZE = 3;
-int levels = [BUFFER_SIZE];
+int FILTER_LENGTH = 3;
+int levels[3];
 uint8_t framePos = 0;
 
 //filter  a(1) = -1.287 and a(2)= .8282   | Digital_Resonators.pdf
@@ -161,13 +211,13 @@ int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames
 		level = generateNoise();
 
 		//insert sample  [1][2][3] => [1][1][2] => [4][1][2]
-		for(int i=1; i<BUFFER_SIZE; i++){
+		for(int i=1; i<FILTER_LENGTH; i++){
 			levels[i]=levels[i]-1;
 		}
 		levels[framePos++] = level;
 
 		//Y(k) = X(k) - a(1)Y(k-1) - a(2)Y(k-2)   | Digital_Resonators.pdf
-		level = level - a1*levels[1] - a2*levels[2];
+		level = level - a1*levels[1] - a2*levels[2]; 
 		
 
 
