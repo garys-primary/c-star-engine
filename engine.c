@@ -7,6 +7,7 @@
 #include <chrono>
 #include <ctime>
 #include <time.h>
+#include <inttypes.h>
 
 using namespace std;
 
@@ -104,10 +105,11 @@ int main(){
 			if(counter >= NUM_FRAMES)
 				runFramer = 0;
 		}
-	}
-	cout << "[FG] generated " << counter << " frames of audio\n";
-	cout << " =====   Emulation done   =====\n\n\n\n"; 
 
+		cout << "[FG] generated " << counter << " frames of audio\n";
+	}
+	
+	cout << " =====   Emulation done   =====\n\n\n\n"; 
 	
 	return 0;
 }
@@ -117,52 +119,74 @@ int main(){
 
 
 
+
 //this will be called when audio stream needs new chunk.
-//cunk size is 256 bytes.
+//chunk size is 256 bytes.
 //the function will generate 256 samples and return to
+
+
+//synth select
+// 1: NoiseVoice noise processor
+int SYNTH = 1;
+
+
+//synth variables
+int level = 0;
+
+/////////////////////////////////////////////////////////////////////
+// SYNTH 1 variables
+// optimization: https://www.avrfreaks.net/forum/circular-buffer
+int BUFFER_SIZE = 3;
+int levels = [BUFFER_SIZE];
+uint8_t framePos = 0;
+
+//filter  a(1) = -1.287 and a(2)= .8282   | Digital_Resonators.pdf
+float a1 = -1.287;
+float a2 = 0.8282;
+
+/////////////////////////////////////////////////////////////////////
+
 int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData ){
-	double *buffer = (double *) outputBuffer;
+	double *RTbuffer = (double *) outputBuffer;
 	double *lastValues = (double *) userData;
 	if ( status ) std::cout << "Stream underflow detected!" << std::endl;
-
-	//synth variables
-	int level = 0;
-
 
 
 	for (int i=0; i<nBufferFrames; i++ ) {
 
-		*buffer++ = (generateNoise() - MAX_LEVEL/2) / (double)MAX_LEVEL;
-		
-		//lastValues[0] += 0.005;
+		*RTbuffer++ = ((level - MAX_LEVEL/2) / (double) MAX_LEVEL); //output(level)
 
-		//if ( lastValues[0] >= 1.0 ) lastValues[0] -= 2.0;
-	}
-	/*
-	for (int i=0; i<nBufferFrames; i++ ) { //buffer framer
+		//////// SYNTH: NoiseVoice noise manipulator ////////
 		
-
 		level = generateNoise();
 
+		//insert sample  [1][2][3] => [1][1][2] => [4][1][2]
+		for(int i=1; i<BUFFER_SIZE; i++){
+			levels[i]=levels[i]-1;
+		}
+		levels[framePos++] = level;
+
+		//Y(k) = X(k) - a(1)Y(k-1) - a(2)Y(k-2)   | Digital_Resonators.pdf
+		level = level - a1*levels[1] - a2*levels[2];
+		
+
+
+
+		/////////////////////////////////////////////////////
+	
 	}
-	outputRt(level, buffer, lastValues);
-	*/
+
+
 	return 0;
 }
 
 
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 
-
-
-void outputRt(int level, double *buffer){
-	//max NV = 1024  min NV = 0
-	//max RT = 1.0  min RT = -1.0	
-
-	*buffer++ = (level - (level/2.0)) / (level/2.0);
-}
 
 int generateNoise(){
-	return rand() % 1024;
+	return rand() % MAX_LEVEL;
 }
 
 
