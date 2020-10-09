@@ -11,6 +11,15 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "g++ -g test.c -o test; ./test.exe",
+            "group":{
+                "kind": "test",
+                "isDefault": true
+            }
         }
     ]
 }

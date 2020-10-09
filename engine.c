@@ -9,6 +9,10 @@
 #include <time.h>
 #include <inttypes.h>
 
+//read keys
+#include <conio.h>  //provides non standard getch() function
+
+
 using namespace std;
 
 
@@ -24,6 +28,8 @@ int diff(timespec start, timespec end);
 
 void outputVisual(int level);
 int generateNoise();
+double generateNoiseNormalized();
+void processKey(char key);
 
 
 int NUM_FRAMES = 256;
@@ -36,6 +42,8 @@ int OUTPUT_TO_SPECTRUM_ANALYZER = 1; //for this you need:
 //a vitrual cable https://vb-audio.com/Cable/index.htm and a 
 //spectrum analyzer http://www.sillanumsoft.org/
 
+//control keys
+int KEY_Q = 0;
 
 
 int main(){
@@ -112,7 +120,7 @@ int main(){
 		int keepReading = 1;
 
 		while(keepReading){
-			char c = getchar();
+			char c = getch();
 
 			if(c == 13 || c == '\n'){
 				if(OUTPUT_TO_SPEAKER){
@@ -126,8 +134,11 @@ int main(){
 				}	
 
 				keepReading = 0;	
+			}else if(c=='q'){
+				cout << "Q: " << KEY_Q << endl;
+				KEY_Q = 1 - KEY_Q;
 			}else{
-				cout << c << '\n';
+				processKey(c);
 			}
 		}
 
@@ -187,49 +198,82 @@ int main(){
 // 1: NoiseVoice noise processor
 int SYNTH = 1;
 
-
-//synth variables
-int level = 0;
-
 /////////////////////////////////////////////////////////////////////
 // SYNTH 1 variables
 // optimization: https://www.avrfreaks.net/forum/circular-buffer
-int FILTER_LENGTH = 3;
-int levels[3];
-uint8_t framePos = 0;
+double level = 0;
+double inputValues[3] = {0,0,0};
+double outputValues[3] = {0,0,0};
 
 //filter  a(1) = -1.287 and a(2)= .8282   | Digital_Resonators.pdf
 float a1 = -1.287;
 float a2 = 0.8282;
+
+typedef double REAL;
+#define NBQ 1
+REAL biquada[]={0.9608788261715387,-0.6823338291115265};
+REAL biquadb[]={-1,0};
+REAL gain=50.29611161304246;
+REAL xyv[]={0,0,0,0,0,0};
 
 /////////////////////////////////////////////////////////////////////
 
 int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData ){
 	double *RTbuffer = (double *) outputBuffer;
 	double *lastValues = (double *) userData;
-	
+
+
 	//if ( status ) std::cout << "Stream underflow detected!" << std::endl;
 
 
-	for (int i=0; i<nBufferFrames; i++ ) {
+	for (int frame=0; frame < nBufferFrames; frame++ ) {
 
-		*RTbuffer++ = ((level - MAX_LEVEL/2) / (double) MAX_LEVEL); //output(level)
+		//*RTbuffer++ = ((level - MAX_LEVEL/2) / (double) MAX_LEVEL); //output(level)
+		*RTbuffer++ = level;
 
 		//////// SYNTH: NoiseVoice noise manipulator ////////
 		
-		level = generateNoise();
+		//level = generateNoise();
+		level = generateNoiseNormalized();
+
+
+		int b,xp=0,yp=3,bqp=0;
+		REAL out = level / gain;
+
+		for (int i=5; i>0; i--) 
+			xyv[i] = xyv[i-1];
+
+		int len=2;
+		xyv[xp]=out;
+		for(int i=0; i<len; i++) 
+			out += xyv[xp+len-i] * biquadb[bqp+i] - xyv[yp+len-i] * biquada[bqp+i];
+		bqp+=len;
+		xyv[yp]=out;
+
+		if(KEY_Q)
+			level = out;
+
+
+
+
 
 		//insert sample  [1][2][3] => [1][1][2] => [4][1][2]
-		for(int i=1; i<FILTER_LENGTH; i++){
-			levels[i]=levels[i]-1;
-		}
-		levels[framePos++] = level;
+		/*for(int i=2; i>0; i--){
+            inputValues[i]=inputValues[i-1];
+        }
+        inputValues[0]=level;
 
 		//Y(k) = X(k) - a(1)Y(k-1) - a(2)Y(k-2)   | Digital_Resonators.pdf
-		level = level - a1*levels[1] - a2*levels[2]; 
+		if(KEY_Q)
+			level = level - a1*outputValues[1] - a2*outputValues[2]; 
 		
-
-
+		//track output levels
+		for(int i=2; i>0; i--){
+            outputValues[i]=outputValues[i-1];
+        }
+        outputValues[0]=level;
+		*/
+		//cout << level << endl;
 
 		/////////////////////////////////////////////////////
 	
@@ -242,12 +286,29 @@ int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-
+void processKey(char key){
+	if(key=='t'){
+		a1 += 0.01;
+		cout << "a1: " << a1 << endl;
+	}else if(key=='g'){
+		a1 -= 0.01;
+		cout << "a1: " << a1 << endl;
+	}else if(key=='y'){
+		a2 += 0.01;
+		cout << "a2: " << a2 << endl;
+	}else if(key=='h'){
+		a2 -= 0.01;
+		cout << "a2: " << a2 << endl;
+	}
+}
 
 int generateNoise(){
 	return rand() % MAX_LEVEL;
 }
+double generateNoiseNormalized(){
 
+	return ((rand() % 1024) - 512 )/ 1024.0;
+}
 
 
 
