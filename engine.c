@@ -7,7 +7,10 @@
 #include <chrono>
 #include <ctime>
 #include <time.h>
+
 #include <inttypes.h>
+#include <math.h>
+
 
 //read keys
 #include <conio.h>  //provides non standard getch() function
@@ -193,21 +196,44 @@ int main(){
 //chunk size is 256 bytes.
 //the function will generate 256 samples and return to
 
+/////////////////////////////////////////////////////////////////////
+// optimization: 
+/////////////////////////////////////////////////////////////////////
+// save cycles on array.push() by overflowing itterator:
+// 			https://www.avrfreaks.net/forum/circular-buffer
+// doubles to uint32_t (much much more precision)
+// 			https://www.avrfreaks.net/forum/floating-point-and-avr?name=PNphpBB2&file=viewtopic&t=113173
+/////////////////////////////////////////////////////////////////////
+
+
+
 
 //synth select
 // 1: NoiseVoice noise processor
 int SYNTH = 1;
 
+
+
+
+
+/////////////////////////////////////////////////////////////////////
+// Common components
+/////////////////////////////////////////////////////////////////////
+// filter explorer http://jaggedplanet.com/iir/iir-explorer.asp
+
+
+
 /////////////////////////////////////////////////////////////////////
 // SYNTH 1 variables
-// optimization: https://www.avrfreaks.net/forum/circular-buffer
-double level = 0;
-double inputValues[3] = {0,0,0};
-double outputValues[3] = {0,0,0};
+/////////////////////////////////////////////////////////////////////
+typedef double REAL;
+
+
+REAL level = 0;
+REAL inputValues[3] = {0,0,0};
+REAL outputValues[3] = {0,0,0};
 
 //filter  a(1) = -1.287 and a(2)= .8282   | Digital_Resonators.pdf
-float a1 = -1.287;
-float a2 = 0.8282;
 
 typedef double REAL;
 #define NBQ 1
@@ -215,6 +241,29 @@ REAL biquada[]={0.9608788261715387,-0.6823338291115265};
 REAL biquadb[]={-1,0};
 REAL gain=50.29611161304246;
 REAL xyv[]={0,0,0,0,0,0};
+
+int cutoff = 0;
+int bandwidth = 0;
+
+REAL a;
+REAL th;
+REAL poleR;
+REAL poleI;
+
+REAL w0;
+REAL w1;
+REAL w2;
+REAL wd;
+
+REAL pwdI;
+REAL pwdR;
+
+REAL dR;
+REAL dI;
+
+REAL warp(REAL cutoff){
+	2 * tan(PI * cutoff / 44100);
+}
 
 /////////////////////////////////////////////////////////////////////
 
@@ -231,13 +280,55 @@ int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames
 		//*RTbuffer++ = ((level - MAX_LEVEL/2) / (double) MAX_LEVEL); //output(level)
 		*RTbuffer++ = level;
 
-		//////// SYNTH: NoiseVoice noise manipulator ////////
+		/////////////////////////////////////////////////////////////////////
+		////////        SYNTH: NoiseVoice noise manipulator          ////////
+		/////////////////////////////////////////////////////////////////////
 		
 		//level = generateNoise();
 		level = generateNoiseNormalized();
 
 
-		int b,xp=0,yp=3,bqp=0;
+		//modify filter props
+
+		//"warp" fx
+		//; 2*Math.tan(PI*cutoff/44100)
+
+		a = warp(cutoff)
+		//a = 3.234924533245629;
+		
+		th = 3.141592653589793;
+		poleR = cos(th)*a;
+		poleI = sin(th)*a;
+		
+		if(poleI<1E-10 && poleI>-1e-10) 
+			poleI=0;
+
+		//"Make bandpass"
+		if (bandwidth>cutoff) bandwidth=cutoff;
+		if (bandwidth>srate/2-cutoff) bandwidth=srate/2-cutoff;
+
+		w2 = warp(cutoff+bw/2);
+		w1 = warp(cutoff-bw/2);
+		w0 = sqrt(w2*w1);           //!
+		wd = w2-w1;
+		
+		pwdR = poleR * (wd/w0); //WAS NOT COMPLEX for the equation
+		pwdI = poleI * (wd/w0); //(c) => new Complex(this.r*c, this.i*c);
+		
+		//d=pwd.multiply(pwd).minus(new Complex(4*w0*w0))
+		//multiply: (c) => Complex(this.r*c.r - this.i*c.i, this.r*c.i + this.i*c.r)
+		//minus: (c) => Complex(this.r-c.r, this.i-c.i)
+
+		dI = 0;	
+		dR = -39.56805950939898;
+
+
+
+
+
+		//biquada[0]=
+
+		int b, xp=0, yp=3, bqp=0;
 		REAL out = level / gain;
 
 		for (int i=5; i>0; i--) 
@@ -278,8 +369,6 @@ int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames
 		/////////////////////////////////////////////////////
 	
 	}
-
-
 	return 0;
 }
 
@@ -288,17 +377,17 @@ int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames
 //////////////////////////////////////////////////////////////////////////////////
 void processKey(char key){
 	if(key=='t'){
-		a1 += 0.01;
-		cout << "a1: " << a1 << endl;
+		cut += 10;
+		cout << "Cutoff: " << cut << endl;
 	}else if(key=='g'){
-		a1 -= 0.01;
-		cout << "a1: " << a1 << endl;
+		cut -= 10;
+		cout << "Cutoff: " << cut << endl;
 	}else if(key=='y'){
-		a2 += 0.01;
-		cout << "a2: " << a2 << endl;
+		reso += 10;
+		cout << "Reso: " << reso << endl;
 	}else if(key=='h'){
-		a2 -= 0.01;
-		cout << "a2: " << a2 << endl;
+		reso -= 10;
+		cout << "Reso: " << reso << endl;
 	}
 }
 
