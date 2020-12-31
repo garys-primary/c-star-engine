@@ -50,10 +50,20 @@ int OUTPUT_TO_SPECTRUM_ANALYZER = 0; //for this you need:
 //a vitrual cable https://vb-audio.com/Cable/index.htm and a 
 //spectrum analyzer http://www.sillanumsoft.org/
 
+///////////////////////////////////////
 //control keys
 int KEY_Q = 0; //enable/disable
-int KEY_V = 0; //verbose
+int KEY_V = false; //verbose
 int fbw = 0; //fake band width
+
+
+
+///////////////////////////////////////
+
+
+
+
+
 
 int main(){
 	//setup and stuff
@@ -239,13 +249,14 @@ REAL biquadA0;
 REAL level = 0;
 
 REAL xyv[]={0,0,0,0,0,0};
+REAL buffer[]={0,0,0,0,0,0};
 
 //filter  a(1) = -1.287 and a(2)= .8282   | Digital_Resonators.pdf
 
 
 //Filter variables
-int cutoff = 10;
-int bw = 20;
+int cutoff = 30;
+int bw = 6;
 REAL gain; 
 
 /* the right way stuff
@@ -286,7 +297,7 @@ int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames
 		//*RTbuffer++ = ((level - MAX_LEVEL/2) / (double) MAX_LEVEL); //output(level)
 		*RTbuffer++ = level;
 
-		/////////////////////////////////////////////////////////////////////
+		///////////////////////////////////////////////////////////////////// 
 		////////        SYNTH: NoiseVoice noise manipulator          ////////
 		/////////////////////////////////////////////////////////////////////
 		
@@ -330,22 +341,53 @@ int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames
 */
 //----------------------------------------------------------
 //----------------- simplify -------------------------------
-		
+		//1x buffer structure
+		//[ in xx xx | out xx xx ]
+		//  g     f        f  f
+		//  a     l    ^   l  l
+		//  i     t    |   t  t
+		//  n     r    |   r  r
+		//  e     |    ^   |  |
+		//  d     |____|___|__|
+
+
 		REAL out = level / gain;
 
+		if(KEY_V)
+			cout << "After gain: \t" << out << endl;
+
 		//rotate buffer
-		for (int i=5; i>0; i--) 
-			xyv[i] = xyv[i-1];
+		for (int i=5; i>0; i--)
+			buffer[i] = buffer[i-1];
+
+		if(KEY_V)
+			cout << "buffer state: \t[ " 
+			<< buffer[0] << "  " 
+			<< buffer[1] << "  "
+			<< buffer[2] << " | "
+			<< buffer[3] << "  "
+			<< buffer[4] << "  "
+			<< buffer[5] << " ]"
+			<< endl;
 
 		//write input to buffer
-		xyv[0]=out;
+		buffer[0]=out;
 
 		//filter
-		out += -xyv[2] - xyv[5] * biquadA0 + 0 - xyv[4] * biquadA1[cutoff];
+		out += -buffer[2] -buffer[4]*biquadA1[cutoff] -buffer[5]*biquadA0;
 
-		xyv[3]=out;
+		if(KEY_V)
+			cout << "buffer[4]*biquadA1[cutoff]: \t" << buffer[4]*biquadA1[cutoff]
+			<< "  buffer[5]*biquadA0: \t" << buffer[5]*biquadA0 << endl;
+
+
+		buffer[3] = out;
 
 		level = out;
+
+		if(KEY_V)
+			cout << "Output: \t" << level << endl;
+
 
 //----------------------------------------------------------
 
@@ -359,6 +401,11 @@ int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames
 
 	
 		/////////////////////////////////////////////////////
+
+		if(KEY_V){
+			cout << "----------------------------------------------" << endl;
+			KEY_V=false;
+		}
 	
 	}
 	return 0;
@@ -366,8 +413,12 @@ int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames
 
 
 
-//////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+/////                                                                   /////
+/////                            KEY BINDINGS                           /////
+/////                                                                   /////
+/////////////////////////////////////////////////////////////////////////////
+
 void processKey(char key){
 
 //'pitch', 0...1024
@@ -379,9 +430,12 @@ void processKey(char key){
 		cutoff -= 1;
 		if(cutoff <= 1) cutoff = 1;
 		cout << "q,a - Cutoff: " << cutoff << endl;
+	}
+
+
 
 //bandwidth, 0...1024
-	}else if(key=='w'){ 
+	else if(key=='w'){ 
 		bw += 1;
 		if(bw >= 1024) bw = 1024;
 		cout << "w,s - Band Width: " << bw << endl;
@@ -392,6 +446,13 @@ void processKey(char key){
 	}
 	//bw=2 is octave down
 	//numbers corrected after 25 seconds
+
+
+// TOGGLERS
+	else if(key=='v'){ 
+		KEY_V = true;
+	}
+
 }
 
 
