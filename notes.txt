@@ -1,0 +1,149 @@
+switch(fbw){
+			case 0:
+				biquada[0]=0.9998575342870253;
+				biquada[1]=-1.9192137387253607; //2000 x 1
+				break;
+			case 1:
+				biquada[0]=0.9992878737867347;
+				biquada[1]=-1.9186671664970558; //2000 x 5    <----
+				break;
+			case 2:
+				biquada[0]=0.9988608399828249;
+				biquada[1]=-1.9182575425378867; //2000 x 8    <----
+				break;
+			case 3:
+				biquada[0]=0.9985762510480874;
+				biquada[1]=-1.9179846047453648; //2000 x 10
+				break;
+			case 4:
+				biquada[0]=0.9978651277841013;
+				biquada[1]=-1.9173027653178354; //2000 x 15
+				break;
+			case 5:
+				biquada[0]=0.9971545000052750;
+				biquada[1]=-1.9166216441269306; //2000 x 20
+				break;
+			case 6:
+				biquada[0]=0.9957347149967284;
+				biquada[1]=-1.9152615401569433; //2000 x 30
+				break;
+			case 7:
+				biquada[0]=0.9929009163990661;
+				biquada[1]=-1.9125497723506009; //2000 x 50
+				break;
+			case 8:
+				biquada[0]=0.9893691656080850;
+				biquada[1]=-1.9091755558464978; //2000 x 75
+				break;
+			case 9:
+				biquada[0]=0.9858486249773567;
+				biquada[1]=-1.9058180890574940; //2000 x 100
+				break;
+			case 10:
+				biquada[0]=0.9788392568089526;
+				biquada[1]=-1.8991514389187816; //2000 x 150
+				break;
+			case 11:
+				biquada[0]=0.9718690290768336;
+				biquada[1]=-1.8925459429566650; //2000 x 200
+				break;
+			case 12:
+				biquada[0]=0.9580312364322016;
+				biquada[1]=-1.8795032738541029; //2000 x 300
+				break;
+			case 13:
+				biquada[0]=0.9306662515638227;
+				biquada[1]=-1.8539885370136955; //2000 x 500   <----
+				break;
+		}
+
+
+
+
+
+			//"THE RIGHT WAY":
+/*
+		//modify filter props
+		a = warp(cutoff)
+		//a = 3.234924533245629;
+		
+		th = 3.141592653589793;
+		poleR = cos(th)*a;
+		poleI = sin(th)*a;
+		
+		if(poleI<1E-10 && poleI>-1e-10) 
+			poleI=0;
+
+		//"Make bandpass"
+		if (bw>cutoff) 
+			bw=cutoff;
+		if (bw>FD/2-cutoff) 
+			bw=FD/2-cutoff;
+
+		w2 = warp(cutoff+bw/2);
+		w1 = warp(cutoff-bw/2);
+		w0 = sqrt(w2*w1);           //!
+		wd = w2-w1;
+		
+		pwdR = poleR * (wd/w0); //WAS NOT COMPLEX for the equation
+		pwdI = poleI * (wd/w0); //(c) => new Complex(this.r*c, this.i*c);
+		
+		//d=pwd.multiply(pwd).minus(new Complex(4*w0*w0))
+		dR = (pwdR * pwdR - pwdI * pwdI) - 4*w0*w0;
+		dI = (pwdR * pwdI + pwdI * pwdR);
+
+		//multiply: (c) => Complex(this.r*c.r - this.i*c.i, this.r*c.i + this.i*c.r)
+		//minus: (c) => Complex(this.r-c.r, this.i-c.i)
+		//plus: (c) => Complex(this.r+c.r, this.i+c.i)
+
+
+		//dR = -39.56805950939898;
+		//dI = 0;	
+		if(KEY_V){
+			cout << "d\texpected: " << -39.56805950939898 << " + i" << 0 << endln;
+			cout << "d\tresultin: " << dR << " + i" << dI << endln;
+		}
+
+		//d^2
+		dR = dR * dR - dI * dI;
+		dI = dR * dI + dI * dR;
+		//dR = 0;
+		//dI = 6.290314738500688;
+
+
+
+		//poles[i]=pwd.plus(d).multiply(0.5);
+		poles
+
+
+		//poles[np*2-1-i]=pwd.minus(d).multiply(0.5);
+
+		zpoles[i]=tform(poles[i]);
+		//tform = (s) => s.plus(2).divide(s.minus(2).negate());
+
+		biquada[1]= real(zpoles[i].plus(zpoles[i+1]).negate());
+		biquada[0]= real(zpoles[i].multiply(zpoles[i+1]));
+			//end right way
+*/
+
+
+
+filter 2nd order
+
+	int NBQ = 2;
+	int i,b,xp=0,yp=3,bqp=0;
+	REAL out=level/gain;
+	for (i=8; i>0; i--) {xyv[i]=xyv[i-1];}
+	for (b=0; b<NBQ; b++)
+	{
+		int len=2;
+		xyv[xp]=out;
+		for(i=0; i<len; i++) { out+=xyv[xp+len-i]*biquadb[bqp+i]-xyv[yp+len-i]*biquada[bqp+i]; }
+		bqp+=len;
+		xyv[yp]=out;
+		xp=yp; yp+=len+1;
+	}
+
+
+		if(KEY_Q)
+			level = out;

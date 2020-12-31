@@ -4,6 +4,13 @@ using namespace std;
 int generateNoise();
 
 int main(){
+    printf("hello");
+    printf("\rbye");
+
+    return 0;
+}
+
+int main2(){
     float a1 = -1.287;
     float a2 = 0.8282;
     int inputBuffer[3] = {0,0,0};
@@ -22,6 +29,7 @@ int main(){
 
         cout << level << "\t|\t" << outputBuffer[0] << '\t' << outputBuffer[1] << '\t' << outputBuffer[2] << '\n';
     }
+    return 0;
 }
 
 

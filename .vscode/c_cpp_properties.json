@@ -20,6 +20,15 @@
                 ],
                 "limitSymbolsToIncludedHeaders": true
             }
+        },
+        {
+            "name": "AVR",
+            "intelliSenseMode": "${default}",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "",
+            "includePath": [],
+            "compilerArgs": []
         }
     ],
     "version": 4
