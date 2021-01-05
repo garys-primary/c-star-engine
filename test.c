@@ -4,8 +4,16 @@ using namespace std;
 int generateNoise();
 
 int main(){
-    printf("hello");
-    printf("\rbye");
+    int result = 0;
+
+    char MIDI_char1 = 0b01100101;
+    char MIDI_char2 = 0b00001011;
+
+    cout << (MIDI_char1>>4 == 0b0110) << endl;
+
+    cout << MIDI_char1 << endl;
+    MIDI_char2 = '\0';
+    cout << MIDI_char1 << endl;
 
     return 0;
 }

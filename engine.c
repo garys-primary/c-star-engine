@@ -52,7 +52,7 @@ int OUTPUT_TO_SPECTRUM_ANALYZER = 0; //for this you need:
 
 ///////////////////////////////////////
 //control keys
-int KEY_Q = 0; //enable/disable
+int KEY_R = false; //enable/disable
 int KEY_V = false; //verbose
 int fbw = 0; //fake band width
 
@@ -313,6 +313,12 @@ int generator( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames
 
 		//level = generateNoiseNormalized();
 
+		if(KEY_R){
+			for(int i=0; i<5; i++)
+				buffer[i]=0;
+			KEY_R = false;
+		}
+
 		////////////////////////
 		// Filter, order 1	
 		//REAL biquada[]={0.998576255387875,-0.242010717627489};
@@ -452,6 +458,10 @@ void processKey(char key){
 	else if(key=='v'){ 
 		KEY_V = true;
 	}
+	else if(key=='r'){ 
+		KEY_R = true;
+	}
+
 
 }
 
