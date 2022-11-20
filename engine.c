@@ -1,3 +1,12 @@
+/**
+Sound Engine - programmatic synth host.
+At given fd, the synth has to push frames (momentary samples)
+into RTaudio's buffer of given size. Per design, upon reaching 
+timeout limit the futher frame processing should be halted.
+The limit is imposed by top destination processor frequency.
+Designed and written by Gary S. Please enjoy!
+*/
+
 #include <iostream>
 #include <stdlib.h>
 
